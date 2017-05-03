@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="" />
+    <meta name="description" content=" " />
+    <meta http-equiv="x-ua-compatible" content="IE=Edge, chrome=1" />
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <title>webSocket测试</title>
+    <style>
+        .self {
+            text-align: right;
+        }
+        .online {
+            text-align: center;
+            color: #ccc;
+        }
+        .othen-content {
+            background-color: #ccc;
+            border-radius: 5%;
+            padding: 10px;
+            line-height: 36px;
+        }
+        .other {
+            margin: 30px 0 30px 5px;
+        }
+        .self {
+            margin: 30px 0 30px 5px;
+        }
+        .self-content {
+            background-color: red;
+            border-radius: 5%;
+            padding: 10px;
+            line-height: 36px;
+        }
+        .footer {
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            padding: 10px;
+        }
+
+        .send-content {
+            width: 70%;
+            height: 30px;
+            border-radius: 5%;
+            border: 1px solid #ccc;
+        }
+        .send-button {
+            font-size: 18px;
+            width: 60px;
+            height: 30px;
+        }
+        .my-name-bg {
+            position: fixed;
+            top: 0;
+            z-index: 99;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+        }
+        .my-name {
+            position: relative;
+            background-color: white;
+            top: 50%;
+            margin: 0 auto;
+            width: 200px;
+            height: 80px;
+            text-align: center;
+            padding-top: 10px;
+        }
+        .my-name-tip {
+            height: 30px;
+        }
+        #my-name {
+            border: 1px solid #ccc;
+        }
+        .message-tip {
+            text-align: center;
+            font-size: 10px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="online">
+            当前在线人数 <span id="onlinecount" class="online-count">1</span>
+        </div>
+        <div class="content" id="content-list">
+            
+        </div>
+        <div class="footer">
+            <span>
+                <input type="text" id="content" class="send-content">
+            </span>
+            <span>
+                <input type="button" value="发送" class="send-button" id="send">
+            </span>
+        </div>
+    </div>
+    <div class="my-name-bg">
+        <div class="my-name">
+            <div class="my-name-tip">
+            输入你的名称按回车：
+            </div>
+            <div>
+                <input type="text" id="my-name">
+            </div>
+        </div>
+    </div>
+    <script>
+        var contentList = document.querySelector('#content-list');
+        var onlineCount = document.querySelector('#onlinecount');
+        var myName = document.querySelector('#my-name');
+        var myNamecontainr = document.querySelector('.my-name-bg');
+        var myNameContent = localStorage.getItem('myname')
+
+        if(localStorage.getItem('myname')) {
+            myNamecontainr.remove()
+        }
+
+        var ctx = window.location.host;
+        var ws = new WebSocket('ws://' + ctx);
+        ws.onopen = function() {
+            contentList.innerHTML = contentList.innerHTML + '<div class="message-tip"><span>连上服务器了</span></div>'
+            handle()
+        }
+
+        function handle() {
+            ws.onmessage = function(e) {
+                console.log(e.data)
+                var mo = JSON.parse(e.data);
+
+                if(mo.aliveCount) {
+                    var item = '<div class="other">' +
+                        '<span>' + mo.name + ':</span><span class="othen-content">' + mo.content + '</span>' +
+                    '</div>'
+                    contentList.innerHTML = contentList.innerHTML + item
+                    onlineCount.innerHTML = mo.aliveCount
+                }
+            }
+
+            ws.onclose = function(e) {
+                contentList.innerHTML = contentList.innerHTML + '<div class="message-tip"><span>服务器关闭了</span></div>'
+            }
+
+            window.onunload = function(){
+                ws.close();
+            };
+
+            var content = document.querySelector('#content')
+            // 发送内容输入框按下回车键监听
+            content.addEventListener('keydown', function(e) {
+                if(e.keyCode == 13) {
+                    send()
+                }
+            })
+            // 监控发送按钮
+            document.querySelector('#send').addEventListener('click', function(e) {
+                send()
+            })
+
+            function send() {
+                var value = content.value
+                content.value = ''
+                var item = '<div class="self">' +
+                        '<span class="self-content">' + value + '</span><span>' + myNameContent + '</span>' +
+                    '</div>'
+                    contentList.innerHTML = contentList.innerHTML + item
+
+                ws.send(JSON.stringify({
+                    name: myNameContent,
+                    content: value
+                }))
+            }
+
+            // 输入用户名称并保存
+            myName.addEventListener('keyup', function(e) {
+                var n = myName.value.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+                if(e.keyCode === 13 && n != '') {
+                    localStorage.setItem('myname', n)
+                    myNameContent = n
+                    myNamecontainr.remove()
+                }
+            })
+        }
+        
+    </script>
+</body>
+</html>
