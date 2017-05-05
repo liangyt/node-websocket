@@ -123,6 +123,7 @@
 
         var ctx = window.location.host;
         var ws = new WebSocket('ws://' + ctx);
+        // 监听socket 是否连上
         ws.onopen = function() {
             contentList.innerHTML = contentList.innerHTML + '<div class="message-tip"><span>连上服务器了</span></div>'
             handle()
@@ -162,6 +163,7 @@
                 send()
             })
 
+            // 发送消息
             function send() {
                 var value = content.value
                 content.value = ''

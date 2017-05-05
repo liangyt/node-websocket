@@ -6,25 +6,28 @@ var http = require('http');
 const webSocket = require('ws');
 
 // view engine setup
+// 设置路由访问根目录
 app.set('views', path.join(__dirname, 'views'));
+// 设置模板引擎为 ejs
 app.set('view engine', 'ejs');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+// 这个是设置静态资源路径，这里用不上
 app.use(express.static(path.join(__dirname, 'public')));
-
+// express 路由
 var router = express.Router();
 
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'webSocket测试' });
 });
 app.use('/', router);
-
+// 使用 node 内置的 http 创建服务
 var server = http.createServer(app);
 
+// 这部分是处理 webSocket 在node服务端的代码
 var wsServer = null;
 var keepAlive = null;
-
 var aliveCount = 0;
 
 var wsService = {
@@ -47,6 +50,7 @@ var wsService = {
             })
         });
 
+        // 客户端断开在线数减一
         ws.on('close', function() {
             aliveCount--
         })
@@ -70,9 +74,12 @@ var wsService = {
 };
 
 const wss = new webSocket.Server({server});
+// 监听客户端websocket连接
 wss.on('connection', wsService.connection)
 wsService.setWss(wss)
+
 var port = 4000;
+// 监听 4000 端口
 server.listen(port);
 server.on('error', function(err){});
 server.on('listening', function() {
